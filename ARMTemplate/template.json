@@ -1,0 +1,652 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sites_simplewebapp12345_name": {
+            "defaultValue": "simplewebapp12345",
+            "type": "String"
+        },
+        "vaults_simplewebappvault_name": {
+            "defaultValue": "simplewebappvault",
+            "type": "String"
+        },
+        "serverfarms_ASP_simplewebapp_959a_name": {
+            "defaultValue": "ASP-simplewebapp-959a",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2016-10-01",
+            "name": "[parameters('vaults_simplewebappvault_name')]",
+            "location": "uksouth",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                "accessPolicies": [
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "b9e44231-96fc-48f6-82e8-9273acfc5f15",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": []
+                        }
+                    },
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "9a393205-c579-4e71-83b3-0771cadc1a28",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": []
+                        }
+                    },
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "260e2e93-117d-40f1-b0a9-029f4d566223",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": []
+                        }
+                    },
+                    {
+                        "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        "objectId": "294a2d93-57c0-4524-8835-b282da0b4346",
+                        "permissions": {
+                            "keys": [
+                                "Get",
+                                "List",
+                                "Update",
+                                "Create",
+                                "Import",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "secrets": [
+                                "Get",
+                                "List",
+                                "Set",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "certificates": [
+                                "Get",
+                                "List",
+                                "Update",
+                                "Create",
+                                "Import",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore",
+                                "ManageContacts",
+                                "ManageIssuers",
+                                "GetIssuers",
+                                "ListIssuers",
+                                "SetIssuers",
+                                "DeleteIssuers"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": true,
+                "enabledForDiskEncryption": true,
+                "enabledForTemplateDeployment": true,
+                "enableSoftDelete": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-02-01",
+            "name": "[parameters('serverfarms_ASP_simplewebapp_959a_name')]",
+            "location": "UK South",
+            "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "family": "S",
+                "capacity": 1
+            },
+            "kind": "app",
+            "properties": {
+                "perSiteScaling": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2016-10-01",
+            "name": "[concat(parameters('vaults_simplewebappvault_name'), '/simplewebappsecret')]",
+            "location": "uksouth",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaults_simplewebappvault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true,
+                    "nbf": 1598543923
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "[parameters('sites_simplewebapp12345_name')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_simplewebapp_959a_name'))]"
+            ],
+            "kind": "app",
+            "identity": {
+                "principalId": "260e2e93-117d-40f1-b0a9-029f4d566223",
+                "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(parameters('sites_simplewebapp12345_name'), '.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(parameters('sites_simplewebapp12345_name'), '.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_simplewebapp_959a_name'))]",
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "siteConfig": {},
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": false,
+                "redundancyMode": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/web')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "numberOfWorkers": 1,
+                "defaultDocuments": [
+                    "Default.htm",
+                    "Default.html",
+                    "Default.asp",
+                    "index.htm",
+                    "index.html",
+                    "iisstart.htm",
+                    "default.aspx",
+                    "index.php",
+                    "hostingstart.html"
+                ],
+                "netFrameworkVersion": "v4.0",
+                "requestTracingEnabled": false,
+                "remoteDebuggingEnabled": false,
+                "remoteDebuggingVersion": "VS2019",
+                "httpLoggingEnabled": false,
+                "logsDirectorySizeLimit": 35,
+                "detailedErrorLoggingEnabled": false,
+                "publishingUsername": "$simplewebapp12345",
+                "azureStorageAccounts": {},
+                "scmType": "VSTSRM",
+                "use32BitWorkerProcess": true,
+                "webSocketsEnabled": false,
+                "alwaysOn": true,
+                "managedPipelineMode": "Integrated",
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": true
+                    }
+                ],
+                "loadBalancing": "LeastRequests",
+                "experiments": {
+                    "rampUpRules": []
+                },
+                "autoHealEnabled": false,
+                "localMySqlEnabled": false,
+                "managedServiceIdentityId": 11988,
+                "ipSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictionsUseMain": false,
+                "http20Enabled": false,
+                "minTlsVersion": "1.2",
+                "ftpsState": "AllAllowed",
+                "reservedInstanceCount": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/6781598541706390')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author": "Steve Leonard",
+                "deployer": "VSTS",
+                "message": "{\"type\":\"Deployment\",\"commitId\":\"e22ca537b4f4af709e5adf6b507f72dbf484f970\",\"buildId\":\"678\",\"buildNumber\":\"20200827.30\",\"repoProvider\":\"TfsGit\",\"repoName\":\"yaml\",\"collectionUrl\":\"https://steveonazure.visualstudio.com/\",\"teamProject\":\"2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"buildProjectUrl\":\"https://steveonazure.visualstudio.com/2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"repositoryUrl\":\"https://steveonazure.visualstudio.com/yaml/_git/yaml\",\"branch\":\"master\",\"teamProjectName\":\"yaml\",\"slotName\":\"production\"}",
+                "start_time": "2020-08-27T15:21:46.6633572Z",
+                "end_time": "2020-08-27T15:21:46.6633572Z",
+                "active": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/hostNameBindings",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/', parameters('sites_simplewebapp12345_name'), '.azurewebsites.net')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "siteName": "simplewebapp12345",
+                "hostNameType": "Verified"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/dev')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]",
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_simplewebapp_959a_name'))]"
+            ],
+            "kind": "app",
+            "identity": {
+                "principalId": "9a393205-c579-4e71-83b3-0771cadc1a28",
+                "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "simplewebapp12345-dev.azurewebsites.net",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "simplewebapp12345-dev.scm.azurewebsites.net",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_simplewebapp_959a_name'))]",
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "siteConfig": {},
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": false,
+                "redundancyMode": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/uat')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]",
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_simplewebapp_959a_name'))]"
+            ],
+            "kind": "app",
+            "identity": {
+                "principalId": "b9e44231-96fc-48f6-82e8-9273acfc5f15",
+                "tenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "simplewebapp12345-uat.azurewebsites.net",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "simplewebapp12345-uat.scm.azurewebsites.net",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_simplewebapp_959a_name'))]",
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "siteConfig": {},
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": false,
+                "redundancyMode": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/config",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/dev/web')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'dev')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "numberOfWorkers": 1,
+                "defaultDocuments": [
+                    "Default.htm",
+                    "Default.html",
+                    "Default.asp",
+                    "index.htm",
+                    "index.html",
+                    "iisstart.htm",
+                    "default.aspx",
+                    "index.php",
+                    "hostingstart.html"
+                ],
+                "netFrameworkVersion": "v4.0",
+                "phpVersion": "5.6",
+                "requestTracingEnabled": false,
+                "remoteDebuggingEnabled": false,
+                "remoteDebuggingVersion": "VS2019",
+                "httpLoggingEnabled": false,
+                "logsDirectorySizeLimit": 35,
+                "detailedErrorLoggingEnabled": false,
+                "publishingUsername": "$simplewebapp12345__dev",
+                "azureStorageAccounts": {},
+                "scmType": "VSTSRM",
+                "use32BitWorkerProcess": true,
+                "webSocketsEnabled": false,
+                "alwaysOn": false,
+                "managedPipelineMode": "Integrated",
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    }
+                ],
+                "loadBalancing": "LeastRequests",
+                "experiments": {
+                    "rampUpRules": []
+                },
+                "autoHealEnabled": false,
+                "localMySqlEnabled": false,
+                "managedServiceIdentityId": 12030,
+                "ipSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictionsUseMain": false,
+                "http20Enabled": false,
+                "minTlsVersion": "1.2",
+                "ftpsState": "AllAllowed",
+                "reservedInstanceCount": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/config",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/uat/web')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'uat')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "numberOfWorkers": 1,
+                "defaultDocuments": [
+                    "Default.htm",
+                    "Default.html",
+                    "Default.asp",
+                    "index.htm",
+                    "index.html",
+                    "iisstart.htm",
+                    "default.aspx",
+                    "index.php",
+                    "hostingstart.html"
+                ],
+                "netFrameworkVersion": "v4.0",
+                "phpVersion": "5.6",
+                "requestTracingEnabled": false,
+                "remoteDebuggingEnabled": false,
+                "remoteDebuggingVersion": "VS2019",
+                "httpLoggingEnabled": false,
+                "logsDirectorySizeLimit": 35,
+                "detailedErrorLoggingEnabled": false,
+                "publishingUsername": "$simplewebapp12345__uat",
+                "azureStorageAccounts": {},
+                "scmType": "VSTSRM",
+                "use32BitWorkerProcess": true,
+                "webSocketsEnabled": false,
+                "alwaysOn": false,
+                "managedPipelineMode": "Integrated",
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": false
+                    }
+                ],
+                "loadBalancing": "LeastRequests",
+                "experiments": {
+                    "rampUpRules": []
+                },
+                "autoHealEnabled": false,
+                "localMySqlEnabled": false,
+                "managedServiceIdentityId": 12032,
+                "ipSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 1,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictionsUseMain": false,
+                "http20Enabled": false,
+                "minTlsVersion": "1.2",
+                "ftpsState": "AllAllowed",
+                "reservedInstanceCount": 0
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/deployments",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/dev/16992a62f5444a8d92d3692f6e014859')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'dev')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "VSTS",
+                "message": "{\"type\":\"deployment\",\"commitId\":\"787823181e66f3ba2b624c61a5013562afc967ed\",\"buildId\":\"675\",\"buildNumber\":\"20200827.27\",\"repoProvider\":\"TfsGit\",\"repoName\":\"yaml\",\"collectionUrl\":\"https://steveonazure.visualstudio.com/\",\"teamProject\":\"2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"buildProjectUrl\":\"https://steveonazure.visualstudio.com/2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"repositoryUrl\":\"https://steveonazure.visualstudio.com/yaml/_git/yaml\",\"branch\":\"master\",\"teamProjectName\":\"yaml\",\"slotName\":\"dev\"}",
+                "start_time": "2020-08-27T15:01:14.1710486Z",
+                "end_time": "2020-08-27T15:01:14.5148008Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/deployments",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/dev/6781598541392470')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'dev')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author": "Steve Leonard",
+                "deployer": "VSTS",
+                "message": "{\"type\":\"Deployment\",\"commitId\":\"e22ca537b4f4af709e5adf6b507f72dbf484f970\",\"buildId\":\"678\",\"buildNumber\":\"20200827.30\",\"repoProvider\":\"TfsGit\",\"repoName\":\"yaml\",\"collectionUrl\":\"https://steveonazure.visualstudio.com/\",\"teamProject\":\"2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"buildProjectUrl\":\"https://steveonazure.visualstudio.com/2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"repositoryUrl\":\"https://steveonazure.visualstudio.com/yaml/_git/yaml\",\"branch\":\"master\",\"teamProjectName\":\"yaml\",\"slotName\":\"dev\"}",
+                "start_time": "2020-08-27T15:16:32.8414519Z",
+                "end_time": "2020-08-27T15:16:32.8414519Z",
+                "active": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/deployments",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/uat/6781598541471334')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'uat')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author": "Steve Leonard",
+                "deployer": "VSTS",
+                "message": "{\"type\":\"Deployment\",\"commitId\":\"e22ca537b4f4af709e5adf6b507f72dbf484f970\",\"buildId\":\"678\",\"buildNumber\":\"20200827.30\",\"repoProvider\":\"TfsGit\",\"repoName\":\"yaml\",\"collectionUrl\":\"https://steveonazure.visualstudio.com/\",\"teamProject\":\"2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"buildProjectUrl\":\"https://steveonazure.visualstudio.com/2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"repositoryUrl\":\"https://steveonazure.visualstudio.com/yaml/_git/yaml\",\"branch\":\"master\",\"teamProjectName\":\"yaml\",\"slotName\":\"uat\"}",
+                "start_time": "2020-08-27T15:17:51.6709809Z",
+                "end_time": "2020-08-27T15:17:51.6709809Z",
+                "active": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/deployments",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/uat/c35ec85ad75947048a8d76b505c4ef30')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'uat')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "VSTS",
+                "message": "{\"type\":\"deployment\",\"commitId\":\"787823181e66f3ba2b624c61a5013562afc967ed\",\"buildId\":\"675\",\"buildNumber\":\"20200827.27\",\"repoProvider\":\"TfsGit\",\"repoName\":\"yaml\",\"collectionUrl\":\"https://steveonazure.visualstudio.com/\",\"teamProject\":\"2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"buildProjectUrl\":\"https://steveonazure.visualstudio.com/2c4f50ae-3acc-4330-9287-ac25d2741bcd\",\"repositoryUrl\":\"https://steveonazure.visualstudio.com/yaml/_git/yaml\",\"branch\":\"master\",\"teamProjectName\":\"yaml\",\"slotName\":\"uat\"}",
+                "start_time": "2020-08-27T15:03:50.0729305Z",
+                "end_time": "2020-08-27T15:03:50.396049Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/hostNameBindings",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/dev/', parameters('sites_simplewebapp12345_name'), '-dev.azurewebsites.net')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'dev')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "siteName": "simplewebapp12345(dev)",
+                "hostNameType": "Verified"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/slots/hostNameBindings",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('sites_simplewebapp12345_name'), '/uat/', parameters('sites_simplewebapp12345_name'), '-uat.azurewebsites.net')]",
+            "location": "UK South",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites/slots', parameters('sites_simplewebapp12345_name'), 'uat')]",
+                "[resourceId('Microsoft.Web/sites', parameters('sites_simplewebapp12345_name'))]"
+            ],
+            "properties": {
+                "siteName": "simplewebapp12345(uat)",
+                "hostNameType": "Verified"
+            }
+        }
+    ]
+}

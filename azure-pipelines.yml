@@ -16,7 +16,7 @@ variables:
 
 stages:
 - stage: Build
-  displayName: Build stage
+  displayName: Build Stage
   
   jobs:
     - job: BuildWebsite
@@ -47,13 +47,17 @@ stages:
        
 
 - stage: DeployToDev
-  displayName: Deploy to Dev
+  displayName: Deploy Dev
   dependsOn: Build
   variables:
-    theme: 'dev2'
+    appName: 'simplewebapp12345'
+    resourceGroupName: 'simplewebapp'
+    theme: 'light'
+    environmentname: 'dev'
+    slotname: 'dev'
   jobs:
-    - deployment: 'WebsiteDeployment'
-      displayName: 'Website Deployment Job'
+    - deployment: 'DevWebsiteDeployment'
+      displayName: 'Dev Website Deployment Job'
       pool: 
         vmImage: $(poolVmImage)
       environment: 'dev'
@@ -91,7 +95,7 @@ stages:
             - task: ArchiveFiles@2
               inputs:
                 rootFolderOrFile: '$(Pipeline.Workspace)/Tempfolder'
-                includeRootFolder: true
+                includeRootFolder: false
                 archiveType: 'zip'
                 archiveFile: '$(Pipeline.Workspace)/Tempfolder/$(websiteZipfileName)'
                 replaceExistingArchive: true
@@ -102,9 +106,117 @@ stages:
                 ConnectionType: 'AzureRM'
                 azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
                 appType: 'webApp'
-                WebAppName: 'leonardweb'
+                WebAppName: '$(appName)'
                 deployToSlotOrASE: true
-                ResourceGroupName: 'SteveGeneral'
-                SlotName: 'dev'
+                ResourceGroupName: '$(resourceGroupName)'
+                SlotName: '$(slotname)'
                 packageForLinux: '$(Pipeline.Workspace)/Tempfolder/$(websiteZipfileName)'
+                AppSettings: '-App:Theme $(theme)'
+
+
+- stage: DeployToUAT
+  displayName: Deploy UAT
+  dependsOn: DeployToDev
+  variables:
+    appName: 'simplewebapp12345'
+    resourceGroupName: 'simplewebapp'
+    theme: 'light'
+    environmentname: 'uat'
+    slotname: 'uat'
+  jobs:
+    - deployment: 'UATWebsiteDeployment'
+      displayName: 'UAT Website Deployment Job'
+      pool: 
+        vmImage: $(poolVmImage)
+      environment: 'uat'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            
+            # Download the zip file of the built website
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                buildType: 'current'
+                artifactName: '$(websiteArtifactName)'
+                targetPath: '$(Pipeline.Workspace)'
+           
+            # Unzip the contents to that we can change some of the config values for this environment
+            - task: ExtractFiles@1
+              inputs:
+                archiveFilePatterns: '$(Pipeline.Workspace)/$(websiteArtifactName)/$(websiteZipfileName)'
+                destinationFolder: '$(Pipeline.Workspace)/Tempfolder'
+                cleanDestinationFolder: true
+            
+            # Find and replace all matches in our json config files
+            - task: replacetokens@3
+              inputs:
+                targetFiles: '$(Pipeline.Workspace)/Tempfolder/**/*.json'
+                encoding: 'auto'
+                writeBOM: true
+                actionOnMissing: 'warn'
+                keepToken: false
+                tokenPrefix: '#{'
+                tokenSuffix: '}#'
+            
+            # Archive (zip) the folder again
+            - task: ArchiveFiles@2
+              inputs:
+                rootFolderOrFile: '$(Pipeline.Workspace)/Tempfolder'
+                includeRootFolder: false
+                archiveType: 'zip'
+                archiveFile: '$(Pipeline.Workspace)/Tempfolder/$(websiteZipfileName)'
+                replaceExistingArchive: true
+
+            # Deploy the application to a slot on the app service and override some of the App Settings for that slot
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
+                appType: 'webApp'
+                WebAppName: '$(appName)'
+                deployToSlotOrASE: true
+                ResourceGroupName: '$(resourceGroupName)'
+                SlotName: '$(slotname)'
+                packageForLinux: '$(Pipeline.Workspace)/Tempfolder/$(websiteZipfileName)'
+                AppSettings: '-App:Theme $(theme)'
+
+
+
+- stage: DeployToProd
+  displayName: Gated Deploy Prod
+  dependsOn: 
+  - DeployToUAT
+  variables:
+    appName: 'simplewebapp12345'
+    resourceGroupName: 'simplewebapp'
+    theme: 'dark'
+    environmentname: 'prod'
+  jobs:
+    - deployment: 'ProdWebsiteDeployment'
+      displayName: 'Prod Website Deployment Job'
+      pool: 
+        vmImage: $(poolVmImage)
+      environment: 'prod'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            
+            # Download the zip file of the built website
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                buildType: 'current'
+                artifactName: '$(websiteArtifactName)'
+                targetPath: '$(Pipeline.Workspace)'
+           
+            # Deploy the application to the main slot and override app settings
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
+                appType: 'webApp'
+                WebAppName: '$(appName)'
+                ResourceGroupName: '$(resourceGroupName)'
+                packageForLinux: '$(Pipeline.Workspace)/$(websiteArtifactName)/$(websiteZipfileName)'
                 AppSettings: '-App:Theme $(theme)'
