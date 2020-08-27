@@ -1,0 +1,110 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- master
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  poolVmImage: 'windows-latest'
+  websiteZipfileName: 'WebApp.zip'
+  websiteArtifactName: 'WebsiteArtifacts'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  
+  jobs:
+    - job: BuildWebsite
+      displayName: Build Website Job
+      pool:
+        vmImage: $(poolVmImage)
+      steps:
+      - task: NuGetToolInstaller@1
+
+      - task: NuGetCommand@2
+        inputs:
+          restoreSolution: '$(solution)'
+
+      # Build the project in release configuration and package it in a zip file in the build artifacts staging directory
+      - task: VSBuild@1
+        inputs:
+          solution: '$(solution)'
+          msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\$(websiteZipfileName)" /p:DeployIisAppPath="Default Web Site"'
+          platform: '$(buildPlatform)'
+          configuration: '$(buildConfiguration)'
+       
+      # Publish the projects zip file as an artifact of this build      
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)'
+          artifact: '$(websiteArtifactName)'
+          publishLocation: 'pipeline'
+       
+
+- stage: DeployToDev
+  displayName: Deploy to Dev
+  dependsOn: Build
+  variables:
+    theme: 'dev2'
+  jobs:
+    - deployment: 'WebsiteDeployment'
+      displayName: 'Website Deployment Job'
+      pool: 
+        vmImage: $(poolVmImage)
+      environment: 'dev'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            
+            # Download the zip file of the built website
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                buildType: 'current'
+                artifactName: '$(websiteArtifactName)'
+                targetPath: '$(Pipeline.Workspace)'
+           
+            # Unzip the contents to that we can change some of the config values for this environment
+            - task: ExtractFiles@1
+              inputs:
+                archiveFilePatterns: '$(Pipeline.Workspace)/$(websiteArtifactName)/$(websiteZipfileName)'
+                destinationFolder: '$(Pipeline.Workspace)/Tempfolder'
+                cleanDestinationFolder: true
+            
+            # Find and replace all matches in our json config files
+            - task: replacetokens@3
+              inputs:
+                targetFiles: '$(Pipeline.Workspace)/Tempfolder/**/*.json'
+                encoding: 'auto'
+                writeBOM: true
+                actionOnMissing: 'warn'
+                keepToken: false
+                tokenPrefix: '#{'
+                tokenSuffix: '}#'
+            
+            # Archive (zip) the folder again
+            - task: ArchiveFiles@2
+              inputs:
+                rootFolderOrFile: '$(Pipeline.Workspace)/Tempfolder'
+                includeRootFolder: true
+                archiveType: 'zip'
+                archiveFile: '$(Pipeline.Workspace)/Tempfolder/$(websiteZipfileName)'
+                replaceExistingArchive: true
+
+            # Deploy the application to a slot on the app service and override some of the App Settings for that slot
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
+                appType: 'webApp'
+                WebAppName: 'leonardweb'
+                deployToSlotOrASE: true
+                ResourceGroupName: 'SteveGeneral'
+                SlotName: 'dev'
+                packageForLinux: '$(Pipeline.Workspace)/Tempfolder/$(websiteZipfileName)'
+                AppSettings: '-App:Theme $(theme)'
