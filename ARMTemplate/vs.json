@@ -2,88 +2,148 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "resourceName": {
-        "type": "string",
-        "metadata": {
-            "description": "Resource name and prefix for all resources"
+        "resourceName": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource name and prefix for all resources"
         }
-      },
-      "hostingPlanName": {
-        "type": "string",
-        "minLength": 1
-      }
+        },
+            "hostingPlanName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "secret" : {
+            "type": "string",
+            "metadata": {
+                "description": "The value to store in Key Vault for the web app to display"
+            }
+        }
     },
     "variables": {
-      "webSiteName": "[concat(parameters('resourceName'), 'website')]",
-      "vaultName": "[concat(parameters('resourceName'), 'vault')]",
-      "environments": ["Dev", "UAT"]
+        "webSiteName": "[concat(parameters('resourceName'), 'website')]",
+        "vaultName": "[concat(parameters('resourceName'), 'vault')]",
+        "environments": ["Dev", "UAT"],
+        "secret": "website_secret"
     },
-    "resources": [
-      {
+    "resources": 
+    [
+        {
         "apiVersion": "2015-08-01",
         "name": "[parameters('hostingPlanName')]",
         "type": "Microsoft.Web/serverfarms",
         "location": "[resourceGroup().location]",
         "tags": {
-          "displayName": "HostingPlan"
+            "displayName": "HostingPlan"
         },
         "sku": {
-          "name": "S1",
-          "capacity": 1
+            "name": "S1",
+            "capacity": 1
         },
         "properties": {
-          "name": "[parameters('hostingPlanName')]"
+            "name": "[parameters('hostingPlanName')]"
         }
-      },
-      {
-        "apiVersion": "2015-08-01",
-        "name": "[variables('webSiteName')]",
-        "type": "Microsoft.Web/sites",
-        "location": "[resourceGroup().location]",
-        "tags": {
-          "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]": "Resource",
-          "displayName": "Website"
         },
-        "dependsOn": [
-          "[resourceId('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
-        ],
-        "kind": "app",
-        "identity": {
-            "type": "SystemAssigned"
+        {
+            "apiVersion": "2015-08-01",
+            "name": "[variables('webSiteName')]",
+            "type": "Microsoft.Web/sites",
+            "location": "[resourceGroup().location]",
+            "tags": {
+            "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]": "Resource",
+            "displayName": "Website"
+            },
+            "dependsOn": [
+            "[resourceId('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+            ],
+            "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+            "name": "[variables('webSiteName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+            "siteConfig": {
+                "appSettings": [
+                    {
+                        "name": "App:Secret",
+                        "value": "ssss"
+                    }
+                ]
+                }    
+            }
         },
-        "properties": {
-          "name": "[variables('webSiteName')]",
-          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
-          "siteConfig": {
-            "appSettings": [
-                {
-                    "name": "App:Secret",
-                    "value": "ssss"
-                }
+        {
+            "apiVersion": "2016-08-01",
+            "type": "Microsoft.Web/sites/slots",
+            "name": "[concat(variables('webSiteName'), '/', variables('environments')[copyIndex()])]",
+            "kind": "app",
+            "location": "[resourceGroup().location]",
+            "comments": "This specifies the web app slots.",
+            "tags": {
+            "displayName": "WebAppSlots"
+            },
+            "properties": {
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+            },
+            "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', variables('webSiteName'))]"
+            ],
+            "copy": {
+            "name": "webPortalSlot",
+            "count": "[length(variables('environments'))]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('vaultName')]",
+            "apiVersion": "2016-10-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [],
+                "enabledForTemplateDeployment": true
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(variables('vaultName'), '/add')]",
+            "apiVersion": "2018-02-14",
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "tenantId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName')), '2020-07-07', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName')), '2020-07-07', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "get",
+                                "list"
+                            ],
+                            "certificates": []
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('webSiteName'))]"
             ]
-        }    
-        }
-      },
-      {
-        "apiVersion": "2016-08-01",
-        "type": "Microsoft.Web/sites/slots",
-        "name": "[concat(variables('webSiteName'), '/', variables('environments')[copyIndex()])]",
-        "kind": "app",
-        "location": "[resourceGroup().location]",
-        "comments": "This specifies the web app slots.",
-        "tags": {
-          "displayName": "WebAppSlots"
         },
-        "properties": {
-          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
-        },
-        "dependsOn": [
-          "[resourceId('Microsoft.Web/Sites', variables('webSiteName'))]"
-        ],
-        "copy": {
-          "name": "webPortalSlot",
-          "count": "[length(variables('environments'))]"
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('vaultName'), '/', variables('secret'))]",
+            "apiVersion": "2016-10-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "contentType": "text/plain",
+                "value": "[parameters('secret')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('vaultName'))]"
+            ]
         }
-      }
     ]
   }
