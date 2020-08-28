@@ -13,7 +13,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Simple Website</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Steves Website</a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -33,14 +33,6 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
-
-            @if (ThemeService.GetEnvironment() == "dev")
-            {
-                <div class="alert alert-secondary" role="alert">
-                    This is a TEST Environment
-                </div>
-            }
-
             @RenderBody()
         </main>
     </div>
@@ -48,6 +40,9 @@
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; @DateTime.Now.Year - Simple Website - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                                                         <p class="float-right">
+                                                             <span class="badge badge-primary">(@ThemeService.GetEnvironment() Environment)</span>
+                                                         </p>                                                        
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
