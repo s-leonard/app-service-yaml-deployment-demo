@@ -56,7 +56,7 @@ stages:
   displayName: Deploy Dev
   dependsOn: Build
   variables:
-    theme: 'light'
+    theme: 'blue'
     environmentname: 'dev'
     slotname: 'Dev'
   jobs:
@@ -122,7 +122,7 @@ stages:
   displayName: Deploy UAT
   dependsOn: DeployToDev
   variables:
-    theme: 'light'
+    theme: 'green'
     environmentname: 'uat'
     slotname: 'UAT'
   jobs:
