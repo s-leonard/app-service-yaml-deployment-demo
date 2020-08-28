@@ -1,0 +1,70 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "hostingPlanName": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "variables": {
+      "webSiteName": "[concat('webSite', uniqueString(resourceGroup().id))]",
+      "environments": ["Dev", "UAT"]
+    },
+    "resources": [
+      {
+        "apiVersion": "2015-08-01",
+        "name": "[parameters('hostingPlanName')]",
+        "type": "Microsoft.Web/serverfarms",
+        "location": "[resourceGroup().location]",
+        "tags": {
+          "displayName": "HostingPlan"
+        },
+        "sku": {
+          "name": "S1",
+          "capacity": 1
+        },
+        "properties": {
+          "name": "[parameters('hostingPlanName')]"
+        }
+      },
+      {
+        "apiVersion": "2015-08-01",
+        "name": "[variables('webSiteName')]",
+        "type": "Microsoft.Web/sites",
+        "location": "[resourceGroup().location]",
+        "tags": {
+          "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]": "Resource",
+          "displayName": "Website"
+        },
+        "dependsOn": [
+          "[resourceId('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+        ],
+        "properties": {
+          "name": "[variables('webSiteName')]",
+          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+        }
+      },
+      {
+        "apiVersion": "2016-08-01",
+        "type": "Microsoft.Web/sites/slots",
+        "name": "[concat(variables('webSiteName'), '/', variables('environments')[copyIndex()])]",
+        "kind": "app",
+        "location": "[resourceGroup().location]",
+        "comments": "This specifies the web app slots.",
+        "tags": {
+          "displayName": "WebAppSlots"
+        },
+        "properties": {
+          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+        },
+        "dependsOn": [
+          "[resourceId('Microsoft.Web/Sites', variables('webSiteName'))]"
+        ],
+        "copy": {
+          "name": "webPortalSlot",
+          "count": "[length(variables('environments'))]"
+        }
+      }
+    ]
+  }
