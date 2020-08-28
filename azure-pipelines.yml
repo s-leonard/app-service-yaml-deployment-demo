@@ -14,6 +14,12 @@ variables:
   websiteZipfileName: 'WebApp.zip'
   websiteArtifactName: 'WebsiteArtifacts'
 
+  # ***************************** Variables to Edit *****************************
+  serviceConnection: 'ENTER-THE-SERVICE-CONNECTION-NAME-HERE' 
+  appName: 'ENTER-THE-WEB-APP-NAME-HERE'
+  resourceGroupName: 'ENTER-YOUR-RESOURCE-GROUP-NAME-HERE'
+  # ***************************** Variables to Edit *****************************
+
 stages:
 - stage: Build
   displayName: Build Stage
@@ -50,11 +56,9 @@ stages:
   displayName: Deploy Dev
   dependsOn: Build
   variables:
-    appName: 'simplewebapp12345'
-    resourceGroupName: 'simplewebapp'
     theme: 'light'
     environmentname: 'dev'
-    slotname: 'dev'
+    slotname: 'Dev'
   jobs:
     - deployment: 'DevWebsiteDeployment'
       displayName: 'Dev Website Deployment Job'
@@ -104,7 +108,7 @@ stages:
             - task: AzureRmWebAppDeployment@4
               inputs:
                 ConnectionType: 'AzureRM'
-                azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
+                azureSubscription: '$(serviceConnection)'
                 appType: 'webApp'
                 WebAppName: '$(appName)'
                 deployToSlotOrASE: true
@@ -118,11 +122,9 @@ stages:
   displayName: Deploy UAT
   dependsOn: DeployToDev
   variables:
-    appName: 'simplewebapp12345'
-    resourceGroupName: 'simplewebapp'
     theme: 'light'
     environmentname: 'uat'
-    slotname: 'uat'
+    slotname: 'UAT'
   jobs:
     - deployment: 'UATWebsiteDeployment'
       displayName: 'UAT Website Deployment Job'
@@ -172,7 +174,7 @@ stages:
             - task: AzureRmWebAppDeployment@4
               inputs:
                 ConnectionType: 'AzureRM'
-                azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
+                azureSubscription: '$(serviceConnection)'
                 appType: 'webApp'
                 WebAppName: '$(appName)'
                 deployToSlotOrASE: true
@@ -188,8 +190,6 @@ stages:
   dependsOn: 
   - DeployToUAT
   variables:
-    appName: 'simplewebapp12345'
-    resourceGroupName: 'simplewebapp'
     theme: 'dark'
     environmentname: 'prod'
   jobs:
@@ -214,7 +214,7 @@ stages:
             - task: AzureRmWebAppDeployment@4
               inputs:
                 ConnectionType: 'AzureRM'
-                azureSubscription: 'Microsoft Azure Internal Consumption(1aa42b20-3482-4a30-bbed-c82350c97417)'
+                azureSubscription: '$(serviceConnection)'
                 appType: 'webApp'
                 WebAppName: '$(appName)'
                 ResourceGroupName: '$(resourceGroupName)'
