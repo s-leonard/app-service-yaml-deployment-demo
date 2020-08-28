@@ -77,6 +77,9 @@
             "type": "Microsoft.Web/sites/slots",
             "name": "[concat(variables('webSiteName'), '/', variables('environments')[copyIndex()])]",
             "kind": "app",
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "location": "[resourceGroup().location]",
             "comments": "This specifies the web app slots.",
             "tags": {
@@ -104,7 +107,9 @@
                     "name": "standard"
                 },
                 "tenantId": "[subscription().tenantId]",
-                "accessPolicies": [],
+                "accessPolicies": [
+                    
+                ],
                 "enabledForTemplateDeployment": true
             }
         },
@@ -117,6 +122,30 @@
                     {
                         "tenantId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName')), '2020-06-01', 'Full').identity.tenantId]",
                         "objectId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName')), '2020-06-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "get",
+                                "list"
+                            ],
+                            "certificates": []
+                        }
+                    },
+                    {
+                        "tenantId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName'), '/slots/Dev'), '2020-06-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName'), '/slots/Dev'), '2020-06-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "get",
+                                "list"
+                            ],
+                            "certificates": []
+                        }
+                    },
+                    {
+                        "tenantId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName'), '/slots/UAT'), '2020-06-01', 'Full').identity.tenantId]",
+                        "objectId": "[reference(concat('Microsoft.Web/sites/', variables('webSiteName'), '/slots/UAT'), '2020-06-01', 'Full').identity.principalId]",
                         "permissions": {
                             "keys": [],
                             "secrets": [
