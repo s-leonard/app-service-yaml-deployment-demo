@@ -23,7 +23,7 @@
         "webSiteName": "[concat(parameters('resourceName'), 'website')]",
         "vaultName": "[concat(parameters('resourceName'), 'vault')]",
         "environments": ["Dev", "UAT"],
-        "secret": "website_secret"
+        "secret": "secret"
     },
     "resources": 
     [
@@ -66,7 +66,7 @@
                 "appSettings": [
                     {
                         "name": "App:Secret",
-                        "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('vaultName'), variables('secret'))).secretUriWithVersion, ')')]"
+                        "value": "zfsdgf"
                     }
                 ]
                 }    
