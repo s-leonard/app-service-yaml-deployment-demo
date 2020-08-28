@@ -2,13 +2,20 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+      "resourceName": {
+        "type": "string",
+        "metadata": {
+            "description": "Resource name and prefix for all resources"
+        }
+      },
       "hostingPlanName": {
         "type": "string",
         "minLength": 1
       }
     },
     "variables": {
-      "webSiteName": "[concat('webSite', uniqueString(resourceGroup().id))]",
+      "webSiteName": "[concat(parameters('resourceName'), 'website')]",
+      "vaultName": "[concat(parameters('resourceName'), 'vault')]",
       "environments": ["Dev", "UAT"]
     },
     "resources": [
@@ -40,9 +47,21 @@
         "dependsOn": [
           "[resourceId('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
         ],
+        "kind": "app",
+        "identity": {
+            "type": "SystemAssigned"
+        },
         "properties": {
           "name": "[variables('webSiteName')]",
-          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]",
+          "siteConfig": {
+            "appSettings": [
+                {
+                    "name": "App:Secret",
+                    "value": "ssss"
+                }
+            ]
+        }    
         }
       },
       {
