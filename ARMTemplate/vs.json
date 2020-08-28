@@ -134,16 +134,18 @@
         },
         {
             "type": "Microsoft.KeyVault/vaults/secrets",
-            "name": "[concat(variables('vaultName'), '/', variables('secret'))]",
             "apiVersion": "2016-10-01",
+            "name": "[concat(variables('vaultName'), '/' variables('secret'))]",
             "location": "[resourceGroup().location]",
-            "properties": {
-                "contentType": "text/plain",
-                "value": "[parameters('secret')]"
-            },
             "dependsOn": [
                 "[resourceId('Microsoft.KeyVault/vaults', variables('vaultName'))]"
-            ]
+            ],
+            "properties": {
+                "value": "[parameters('secret')]",
+                "attributes": {
+                    "enabled": true
+                }
+            }
         }
     ]
   }
