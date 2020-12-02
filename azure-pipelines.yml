@@ -219,4 +219,4 @@ stages:
                 WebAppName: '$(appName)'
                 ResourceGroupName: '$(resourceGroupName)'
                 packageForLinux: '$(Pipeline.Workspace)/$(websiteArtifactName)/$(websiteZipfileName)'
-                AppSettings: '-App:Theme $(theme)'
+                AppSettings: '-App:Theme $(theme) -App:Environment $(environmentname)'
